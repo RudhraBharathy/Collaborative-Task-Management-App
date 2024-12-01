@@ -13,8 +13,7 @@ import { Link } from "react-router-dom";
 import GoogleLogo from "../../assets/images/google.svg";
 import supabase from "../../utils/supabaseClient";
 import { useToast } from "@/hooks/use-toast";
-
-export const iframeHeight = "600px";
+import { User } from "lucide-react";
 
 export const containerClassName =
   "w-full h-screen flex items-center justify-center px-4";
@@ -64,7 +63,10 @@ export default function Signup() {
       <form onSubmit={handleSignup}>
         <Card className="mx-auto max-w-sm">
           <CardHeader>
-            <CardTitle className="text-2xl">Sign up</CardTitle>
+            <CardTitle className="text-2xl inline-flex items-center justify-center">
+              <User className="mr-2" />
+              Sign up
+            </CardTitle>
             <CardDescription>
               Enter your email and password below to create a new account
             </CardDescription>
@@ -76,6 +78,7 @@ export default function Signup() {
                 <Input
                   id="username"
                   type="text"
+                  value={username}
                   required
                   onChange={(e) => setUsername(e.target.value)}
                 />
@@ -85,6 +88,7 @@ export default function Signup() {
                 <Input
                   id="email"
                   type="email"
+                  value={email}
                   required
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -96,6 +100,7 @@ export default function Signup() {
                 <Input
                   id="password"
                   type="password"
+                  value={password}
                   required
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -122,7 +127,7 @@ export default function Signup() {
             <div className="mt-4 text-center text-sm">
               Already have an account?{" "}
               <Link to="/login" className="underline">
-                Login
+                Log in
               </Link>
             </div>
           </CardContent>

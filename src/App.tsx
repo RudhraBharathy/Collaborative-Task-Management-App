@@ -1,14 +1,13 @@
 import "./assets/styles/App.css";
 import Navbar from "./components/ui/Navbar";
 import { Toaster } from "./components/ui/toaster";
-import Login from "./pages/Auth/Login";
-import Signup from "./pages/Auth/Signup";
+import AppRoutes from "./routes/AppRoutes";
 
 const App = () => {
   return (
     <>
       <Navbar />
-      <Signup />
+      <AppRoutes />
       <Toaster />
     </>
   );

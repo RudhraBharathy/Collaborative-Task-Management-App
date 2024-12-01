@@ -11,8 +11,7 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import GoogleLogo from "../../assets/images/google.svg";
-
-export const iframeHeight = "600px";
+import { User } from "lucide-react";
 
 export const containerClassName =
   "w-full h-screen flex items-center justify-center px-4";
@@ -25,7 +24,10 @@ export default function Login() {
     <div className={containerClassName}>
       <Card className="mx-auto max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
+          <CardTitle className="text-2xl inline-flex items-center justify-center">
+            <User className="mr-2" />
+            Log in
+          </CardTitle>
           <CardDescription>
             Enter your email and password below to login to your account
           </CardDescription>
@@ -37,6 +39,7 @@ export default function Login() {
               <Input
                 id="email"
                 type="email"
+                value={email}
                 placeholder="ctm@example.com"
                 required
                 onChange={(e) => setEmail(e.target.value)}
@@ -53,11 +56,12 @@ export default function Login() {
                 id="password"
                 type="password"
                 required
+                value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
             <Button type="submit" className="w-full">
-              Login
+              Log in
             </Button>
             <Button variant="outline" className="w-full">
               <img src={GoogleLogo} />
