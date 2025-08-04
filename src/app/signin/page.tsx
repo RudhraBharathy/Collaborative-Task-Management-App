@@ -2,37 +2,99 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Lock, Eye, EyeOff, Github, Chrome, MessageSquare } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Mail, Lock, Eye, EyeOff, Github, MessageSquare, AlertCircle, CheckCircle } from "lucide-react";
 import Link from "next/link";
+import { FcGoogle } from "react-icons/fc";
+import { useAuthContext } from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
 
 export default function SignInPage() {
+  const router = useRouter();
+  const { signIn, resetPassword } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    rememberMe: false
+    rememberMe: false,
   });
 
   const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear errors when user starts typing
+    if (error) setError(null);
   };
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Navigate to dashboard
-    window.location.href = "/dashboard";
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await signIn(formData.email, formData.password);
+      
+      if (error) {
+        setError(error.message);
+      } else {
+        setSuccess("Sign in successful!");
+        router.push("/dashboard");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleForgotPassword = () => {
-    // Handle forgot password
-    console.log("Forgot password clicked");
+  const handleForgotPassword = async () => {
+    if (!resetEmail) {
+      setError("Please enter your email address");
+      return;
+    }
+
+    setResetLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await resetPassword(resetEmail);
+      
+      if (error) {
+        setError(error.message);
+      } else {
+        setResetSuccess("Password reset email sent! Please check your inbox.");
+        setResetEmail("");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   const handleSocialLogin = (provider: string) => {
@@ -44,9 +106,7 @@ export default function SignInPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
-          <p className="text-muted-foreground">
-            Sign in to your CTM account
-          </p>
+          <p className="text-muted-foreground">Sign in to your CTM account</p>
         </div>
 
         <Card>
@@ -57,6 +117,26 @@ export default function SignInPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Error Message */}
+            {error && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Success Message */}
+            {success && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  {success}
+                </AlertDescription>
+              </Alert>
+            )}
+
             {/* Login Form */}
             <form onSubmit={handleSignIn} className="space-y-4">
               <div className="space-y-2">
@@ -85,7 +165,9 @@ export default function SignInPage() {
                     placeholder="Enter your password"
                     className="pl-10 pr-10"
                     value={formData.password}
-                    onChange={(e) => handleInputChange("password", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("password", e.target.value)
+                    }
                     required
                   />
                   <button
@@ -93,7 +175,11 @@ export default function SignInPage() {
                     className="absolute right-3 top-3 h-4 w-4 text-muted-foreground hover:text-foreground"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -103,7 +189,9 @@ export default function SignInPage() {
                   <Checkbox
                     id="rememberMe"
                     checked={formData.rememberMe}
-                    onCheckedChange={(checked) => handleInputChange("rememberMe", checked as boolean)}
+                    onCheckedChange={(checked) =>
+                      handleInputChange("rememberMe", checked as boolean)
+                    }
                   />
                   <Label htmlFor="rememberMe" className="text-sm">
                     Remember me
@@ -120,28 +208,43 @@ export default function SignInPage() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Reset Password</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Enter your email address and we'll send you a link to reset your password.
+                        Enter your email address and we'll send you a link to
+                        reset your password.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="space-y-4">
+                      {resetSuccess && (
+                        <Alert className="border-green-200 bg-green-50">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <AlertDescription className="text-green-800">
+                            {resetSuccess}
+                          </AlertDescription>
+                        </Alert>
+                      )}
                       <div className="space-y-2">
                         <Label htmlFor="resetEmail">Email Address</Label>
                         <Input
                           id="resetEmail"
                           type="email"
                           placeholder="Enter your email"
+                          value={resetEmail}
+                          onChange={(e) => setResetEmail(e.target.value)}
                         />
                       </div>
-                      <Button onClick={handleForgotPassword} className="w-full">
-                        Send Reset Link
+                      <Button 
+                        onClick={handleForgotPassword} 
+                        className="w-full"
+                        disabled={resetLoading}
+                      >
+                        {resetLoading ? "Sending..." : "Send Reset Link"}
                       </Button>
                     </div>
                   </AlertDialogContent>
                 </AlertDialog>
               </div>
 
-              <Button type="submit" className="w-full">
-                Sign In
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
 
@@ -158,30 +261,14 @@ export default function SignInPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid">
                 <Button
                   variant="outline"
                   onClick={() => handleSocialLogin("google")}
                   className="flex items-center gap-2"
                 >
-                  <Chrome className="w-4 h-4" />
+                  <FcGoogle className="w-4 h-4" />
                   <span className="hidden sm:inline">Google</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => handleSocialLogin("github")}
-                  className="flex items-center gap-2"
-                >
-                  <Github className="w-4 h-4" />
-                  <span className="hidden sm:inline">GitHub</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => handleSocialLogin("slack")}
-                  className="flex items-center gap-2"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span className="hidden sm:inline">Slack</span>
                 </Button>
               </div>
             </div>
@@ -197,19 +284,7 @@ export default function SignInPage() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Additional Info */}
-        <div className="mt-8 text-center">
-          <div className="flex justify-center items-center gap-4 mb-4">
-            <Badge variant="secondary">🔒 Secure</Badge>
-            <Badge variant="secondary">⚡ Fast</Badge>
-            <Badge variant="secondary">🔄 Sync</Badge>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Your data is encrypted and secure
-          </p>
-        </div>
       </div>
     </div>
   );
-} 
+}

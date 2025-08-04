@@ -2,19 +2,56 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle, Mail, Lock, User, Building, Globe, Bell } from "lucide-react";
+import {
+  CheckCircle,
+  Mail,
+  Lock,
+  User,
+  Building,
+  Globe,
+  Bell,
+  AlertCircle,
+} from "lucide-react";
+import { FcGoogle } from "react-icons/fc";
 import Link from "next/link";
+import { Separator } from "@/components/ui/separator";
+import { useAuthContext } from "@/contexts/auth-context";
+import {
+  createProfile,
+  updateProfile,
+  upsertProfile,
+  getProfile,
+} from "@/lib/profile";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
 export default function SignUpPage() {
+  const router = useRouter();
+  const { signUp, user: authUser } = useAuthContext();
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -24,25 +61,145 @@ export default function SignUpPage() {
     teamName: "",
     defaultView: "board",
     notifications: true,
-    timezone: "UTC"
+    timezone: "UTC",
   });
 
   const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear errors when user starts typing
+    if (error) setError(null);
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStep(2);
+    setLoading(true);
+    setError(null);
+
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
+    // Validate password strength
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Follow the proper workflow: Sign up → Email & Password → Email Verification
+      const { data, error } = await signUp(formData.email, formData.password);
+
+      if (error) {
+        setError(error.message);
+      } else {
+        setSuccess(
+          "Account created successfully! Please check your email to verify your account."
+        );
+        setStep(2);
+      }
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEmailVerification = () => {
-    setStep(3);
+  const handleEmailVerification = async () => {
+    setLoading(true);
+    try {
+      // After email verification, user should be able to sign in
+      const { data: signInData, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+
+      if (signInError) {
+        setError("Please verify your email first, then try again.");
+      } else {
+        setSuccess("Email verified and signed in successfully!");
+        setStep(3);
+      }
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAccountSetup = () => {
-    // Navigate to dashboard
-    window.location.href = "/dashboard";
+  const handleAccountSetup = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Get current session to ensure user is authenticated
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        setError("Failed to get session. Please try signing in again.");
+        return;
+      }
+
+      if (!session?.user) {
+        setError(
+          "No active session found. Please complete email verification first."
+        );
+        return;
+      }
+
+      const user = session.user;
+
+      // Use upsertProfile to handle cases where profile might not exist
+      const { data: profileData, error: profileError } = await upsertProfile({
+        id: user.id,
+        email: user.email || formData.email,
+        full_name: formData.fullName,
+        job_title: formData.jobTitle,
+        team_name: formData.teamName,
+        default_view: formData.defaultView,
+        timezone: formData.timezone,
+        notifications_enabled: formData.notifications,
+      });
+
+      if (profileError) {
+        // Try to create profile if update fails
+        const { data: createData, error: createError } = await createProfile({
+          id: user.id,
+          email: user.email || formData.email,
+          full_name: formData.fullName,
+          job_title: formData.jobTitle,
+          team_name: formData.teamName,
+          default_view: formData.defaultView,
+          timezone: formData.timezone,
+          notifications_enabled: formData.notifications,
+        });
+
+        if (createError) {
+          setError(`Failed to create profile: ${createError.message}`);
+        } else {
+          setSuccess("Profile created successfully!");
+          router.push("/dashboard");
+        }
+      } else {
+        setSuccess("Profile updated successfully!");
+        router.push("/dashboard");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSocialLogin = (provider: string) => {
+    console.log(`Signing up with ${provider}`);
   };
 
   return (
@@ -62,17 +219,25 @@ export default function SignUpPage() {
           <div className="flex items-center gap-2">
             {[1, 2, 3].map((stepNumber) => (
               <div key={stepNumber} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  step >= stepNumber 
-                    ? "bg-primary text-primary-foreground" 
-                    : "bg-muted text-muted-foreground"
-                }`}>
-                  {step > stepNumber ? <CheckCircle className="w-4 h-4" /> : stepNumber}
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    step >= stepNumber
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {step > stepNumber ? (
+                    <CheckCircle className="w-4 h-4" />
+                  ) : (
+                    stepNumber
+                  )}
                 </div>
                 {stepNumber < 3 && (
-                  <div className={`w-12 h-0.5 mx-2 ${
-                    step > stepNumber ? "bg-primary" : "bg-muted"
-                  }`} />
+                  <div
+                    className={`w-12 h-0.5 mx-2 ${
+                      step > stepNumber ? "bg-primary" : "bg-muted"
+                    }`}
+                  />
                 )}
               </div>
             ))}
@@ -82,13 +247,33 @@ export default function SignUpPage() {
         {/* Step 1: Registration Form */}
         {step === 1 && (
           <Card>
-            <CardHeader>
+            <CardHeader className="text-center">
               <CardTitle>Account Information</CardTitle>
               <CardDescription>
                 Create your account to get started
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Error Message */}
+              {error && (
+                <Alert className="mb-4 border-red-200 bg-red-50">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800">
+                    {error}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Success Message */}
+              {success && (
+                <Alert className="mb-4 border-green-200 bg-green-50">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">
+                    {success}
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
@@ -100,7 +285,9 @@ export default function SignUpPage() {
                       placeholder="Enter your email"
                       className="pl-10"
                       value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("email", e.target.value)
+                      }
                       required
                     />
                   </div>
@@ -116,7 +303,9 @@ export default function SignUpPage() {
                       placeholder="Create a password"
                       className="pl-10"
                       value={formData.password}
-                      onChange={(e) => handleInputChange("password", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("password", e.target.value)
+                      }
                       required
                     />
                   </div>
@@ -132,20 +321,49 @@ export default function SignUpPage() {
                       placeholder="Confirm your password"
                       className="pl-10"
                       value={formData.confirmPassword}
-                      onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("confirmPassword", e.target.value)
+                      }
                       required
                     />
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full">
-                  Create Account
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Creating Account..." : "Create Account"}
                 </Button>
+
+                <div className="space-y-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <Separator className="w-full" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Or continue with
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleSocialLogin("google")}
+                      className="flex items-center gap-2"
+                    >
+                      <FcGoogle className="w-4 h-4" />
+                      <span className="hidden sm:inline">Google</span>
+                    </Button>
+                  </div>
+                </div>
 
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">
                     Already have an account?{" "}
-                    <Link href="/signin" className="text-primary hover:underline">
+                    <Link
+                      href="/signin"
+                      className="text-primary hover:underline"
+                    >
                       Sign in
                     </Link>
                   </p>
@@ -158,7 +376,7 @@ export default function SignUpPage() {
         {/* Step 2: Email Verification */}
         {step === 2 && (
           <Card>
-            <CardHeader>
+            <CardHeader className="text-center">
               <CardTitle>Verify Your Email</CardTitle>
               <CardDescription>
                 We've sent a verification link to {formData.email}
@@ -176,6 +394,7 @@ export default function SignUpPage() {
                 <Button onClick={handleEmailVerification} className="w-full">
                   I've Verified My Email
                 </Button>
+
                 <Button variant="outline" className="w-full">
                   Resend Email
                 </Button>
@@ -187,11 +406,9 @@ export default function SignUpPage() {
         {/* Step 3: Account Setup */}
         {step === 3 && (
           <Card>
-            <CardHeader>
+            <CardHeader className="text-center">
               <CardTitle>Complete Your Profile</CardTitle>
-              <CardDescription>
-                Set up your account preferences
-              </CardDescription>
+              <CardDescription>Set up your account preferences</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Profile Information */}
@@ -200,14 +417,16 @@ export default function SignUpPage() {
                   <User className="w-4 h-4" />
                   Profile Information
                 </h3>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name</Label>
                   <Input
                     id="fullName"
                     placeholder="Enter your full name"
                     value={formData.fullName}
-                    onChange={(e) => handleInputChange("fullName", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("fullName", e.target.value)
+                    }
                   />
                 </div>
 
@@ -217,7 +436,9 @@ export default function SignUpPage() {
                     id="jobTitle"
                     placeholder="e.g., Product Manager"
                     value={formData.jobTitle}
-                    onChange={(e) => handleInputChange("jobTitle", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("jobTitle", e.target.value)
+                    }
                   />
                 </div>
 
@@ -227,7 +448,10 @@ export default function SignUpPage() {
                     <Avatar className="w-16 h-16">
                       <AvatarImage src="/avatars/default.jpg" />
                       <AvatarFallback>
-                        {formData.fullName.split(" ").map(n => n[0]).join("")}
+                        {formData.fullName
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
                       </AvatarFallback>
                     </Avatar>
                     <Button variant="outline" size="sm">
@@ -243,7 +467,7 @@ export default function SignUpPage() {
                   <Building className="w-4 h-4" />
                   Team Setup
                 </h3>
-                
+
                 <div className="space-y-3">
                   <div className="flex items-center space-x-2">
                     <input
@@ -255,7 +479,7 @@ export default function SignUpPage() {
                     />
                     <Label htmlFor="create-team">Create a new team</Label>
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <input
                       type="radio"
@@ -265,7 +489,7 @@ export default function SignUpPage() {
                     />
                     <Label htmlFor="join-team">Join an existing team</Label>
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <input
                       type="radio"
@@ -283,7 +507,9 @@ export default function SignUpPage() {
                     id="teamName"
                     placeholder="Enter team name"
                     value={formData.teamName}
-                    onChange={(e) => handleInputChange("teamName", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("teamName", e.target.value)
+                    }
                   />
                 </div>
               </div>
@@ -294,10 +520,15 @@ export default function SignUpPage() {
                   <Globe className="w-4 h-4" />
                   Workspace Preferences
                 </h3>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="defaultView">Default View</Label>
-                  <Select value={formData.defaultView} onValueChange={(value) => handleInputChange("defaultView", value)}>
+                  <Select
+                    value={formData.defaultView}
+                    onValueChange={(value) =>
+                      handleInputChange("defaultView", value)
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -312,7 +543,12 @@ export default function SignUpPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="timezone">Time Zone</Label>
-                  <Select value={formData.timezone} onValueChange={(value) => handleInputChange("timezone", value)}>
+                  <Select
+                    value={formData.timezone}
+                    onValueChange={(value) =>
+                      handleInputChange("timezone", value)
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -329,17 +565,26 @@ export default function SignUpPage() {
                   <Switch
                     id="notifications"
                     checked={formData.notifications}
-                    onCheckedChange={(checked) => handleInputChange("notifications", checked)}
+                    onCheckedChange={(checked) =>
+                      handleInputChange("notifications", checked)
+                    }
                   />
-                  <Label htmlFor="notifications" className="flex items-center gap-2">
+                  <Label
+                    htmlFor="notifications"
+                    className="flex items-center gap-2"
+                  >
                     <Bell className="w-4 h-4" />
                     Enable email notifications
                   </Label>
                 </div>
               </div>
 
-              <Button onClick={handleAccountSetup} className="w-full">
-                Complete Setup
+              <Button
+                onClick={handleAccountSetup}
+                className="w-full"
+                disabled={loading}
+              >
+                {loading ? "Setting Up..." : "Complete Setup"}
               </Button>
             </CardContent>
           </Card>
@@ -347,4 +592,4 @@ export default function SignUpPage() {
       </div>
     </div>
   );
-} 
+}

@@ -2,19 +2,45 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { 
-  Plus, 
-  Search, 
-  Filter, 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Plus,
+  Search,
+  Filter,
   MoreHorizontal,
   Star,
   Users,
@@ -33,7 +59,7 @@ import {
   Calendar as CalendarIcon,
   BarChart3,
   Table as TableIcon,
-  CheckSquare
+  CheckSquare,
 } from "lucide-react";
 
 export default function ProjectsPage() {
@@ -44,26 +70,28 @@ export default function ProjectsPage() {
     {
       id: 1,
       name: "Website Redesign",
-      description: "Complete overhaul of the company website with modern design and improved UX",
+      description:
+        "Complete overhaul of the company website with modern design and improved UX",
       progress: 75,
       status: "in-progress",
       priority: "high",
       dueDate: "Dec 20, 2024",
       team: ["Sarah M.", "David J.", "Emma W."],
       tasks: { total: 24, completed: 18, overdue: 2 },
-      avatar: "WR"
+      avatar: "WR",
     },
     {
       id: 2,
       name: "Mobile App Development",
-      description: "iOS and Android app for customer engagement and service delivery",
+      description:
+        "iOS and Android app for customer engagement and service delivery",
       progress: 45,
       status: "active",
       priority: "medium",
       dueDate: "Jan 15, 2025",
       team: ["Mike R.", "Sarah M.", "John D."],
       tasks: { total: 32, completed: 14, overdue: 1 },
-      avatar: "MA"
+      avatar: "MA",
     },
     {
       id: 3,
@@ -75,7 +103,7 @@ export default function ProjectsPage() {
       dueDate: "Dec 31, 2024",
       team: ["Emma W.", "David J."],
       tasks: { total: 18, completed: 16, overdue: 0 },
-      avatar: "MC"
+      avatar: "MC",
     },
     {
       id: 4,
@@ -87,7 +115,7 @@ export default function ProjectsPage() {
       dueDate: "Feb 28, 2025",
       team: ["John D.", "Mike R."],
       tasks: { total: 45, completed: 13, overdue: 3 },
-      avatar: "DM"
+      avatar: "DM",
     },
     {
       id: 5,
@@ -99,7 +127,7 @@ export default function ProjectsPage() {
       dueDate: "Jan 30, 2025",
       team: ["Sarah M.", "Emma W.", "David J."],
       tasks: { total: 28, completed: 17, overdue: 1 },
-      avatar: "CP"
+      avatar: "CP",
     },
     {
       id: 6,
@@ -111,27 +139,37 @@ export default function ProjectsPage() {
       dueDate: "Dec 15, 2024",
       team: ["Mike R.", "John D."],
       tasks: { total: 15, completed: 3, overdue: 2 },
-      avatar: "SA"
-    }
+      avatar: "SA",
+    },
   ];
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed": return "bg-green-500";
-      case "in-progress": return "bg-blue-500";
-      case "nearly-complete": return "bg-green-400";
-      case "active": return "bg-yellow-500";
-      case "planning": return "bg-gray-500";
-      default: return "bg-gray-500";
+      case "completed":
+        return "bg-green-500";
+      case "in-progress":
+        return "bg-blue-500";
+      case "nearly-complete":
+        return "bg-green-400";
+      case "active":
+        return "bg-yellow-500";
+      case "planning":
+        return "bg-gray-500";
+      default:
+        return "bg-gray-500";
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "high": return "destructive";
-      case "medium": return "default";
-      case "low": return "secondary";
-      default: return "secondary";
+      case "high":
+        return "destructive";
+      case "medium":
+        return "default";
+      case "low":
+        return "secondary";
+      default:
+        return "secondary";
     }
   };
 
@@ -156,13 +194,10 @@ export default function ProjectsPage() {
         <div className="flex-1">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search projects..."
-              className="pl-10"
-            />
+            <Input placeholder="Search projects..." className="pl-10" />
           </div>
         </div>
-        
+
         <div className="flex gap-2">
           <Select defaultValue="all">
             <SelectTrigger className="w-32">
@@ -175,7 +210,7 @@ export default function ProjectsPage() {
               <SelectItem value="planning">Planning</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Select defaultValue="all">
             <SelectTrigger className="w-32">
               <SelectValue />
@@ -187,7 +222,7 @@ export default function ProjectsPage() {
               <SelectItem value="marketing">Marketing</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Select defaultValue="recent">
             <SelectTrigger className="w-40">
               <SelectValue />
@@ -206,7 +241,11 @@ export default function ProjectsPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">View:</span>
-          <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value)}>
+          <ToggleGroup
+            type="single"
+            value={viewMode}
+            onValueChange={(value) => value && setViewMode(value)}
+          >
             <ToggleGroupItem value="grid" aria-label="Grid view">
               <Grid3X3 className="h-4 w-4" />
             </ToggleGroupItem>
@@ -221,7 +260,7 @@ export default function ProjectsPage() {
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
-        
+
         <div className="text-sm text-muted-foreground">
           {projects.length} projects
         </div>
@@ -231,7 +270,10 @@ export default function ProjectsPage() {
       {viewMode === "grid" && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((project) => (
-            <Card key={project.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+            <Card
+              key={project.id}
+              className="hover:shadow-lg transition-shadow cursor-pointer"
+            >
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
@@ -288,18 +330,27 @@ export default function ProjectsPage() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">Progress</span>
-                    <span className="text-sm text-muted-foreground">{project.progress}%</span>
+                    <span className="text-sm text-muted-foreground">
+                      {project.progress}%
+                    </span>
                   </div>
                   <Progress value={project.progress} className="h-2" />
                 </div>
 
                 {/* Status and Priority */}
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${getStatusColor(project.status)}`} />
+                  <div
+                    className={`w-2 h-2 rounded-full ${getStatusColor(
+                      project.status
+                    )}`}
+                  />
                   <Badge variant="outline" className="text-xs capitalize">
                     {project.status.replace("-", " ")}
                   </Badge>
-                  <Badge variant={getPriorityColor(project.priority)} className="text-xs">
+                  <Badge
+                    variant={getPriorityColor(project.priority)}
+                    className="text-xs"
+                  >
                     {project.priority}
                   </Badge>
                 </div>
@@ -309,9 +360,15 @@ export default function ProjectsPage() {
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <div className="flex -space-x-2">
                     {project.team.slice(0, 3).map((member, index) => (
-                      <Avatar key={index} className="h-6 w-6 border-2 border-background">
+                      <Avatar
+                        key={index}
+                        className="h-6 w-6 border-2 border-background"
+                      >
                         <AvatarFallback className="text-xs">
-                          {member.split(" ").map(n => n[0]).join("")}
+                          {member
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
                         </AvatarFallback>
                       </Avatar>
                     ))}
@@ -350,7 +407,10 @@ export default function ProjectsPage() {
       {viewMode === "list" && (
         <div className="space-y-4">
           {projects.map((project) => (
-            <Card key={project.id} className="hover:shadow-md transition-shadow">
+            <Card
+              key={project.id}
+              className="hover:shadow-md transition-shadow"
+            >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4 flex-1">
@@ -359,18 +419,32 @@ export default function ProjectsPage() {
                     </Avatar>
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-lg">{project.name}</h3>
+                        <h3 className="font-semibold text-lg">
+                          {project.name}
+                        </h3>
                         <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${getStatusColor(project.status)}`} />
-                          <Badge variant="outline" className="text-xs capitalize">
+                          <div
+                            className={`w-2 h-2 rounded-full ${getStatusColor(
+                              project.status
+                            )}`}
+                          />
+                          <Badge
+                            variant="outline"
+                            className="text-xs capitalize"
+                          >
                             {project.status.replace("-", " ")}
                           </Badge>
-                          <Badge variant={getPriorityColor(project.priority)} className="text-xs">
+                          <Badge
+                            variant={getPriorityColor(project.priority)}
+                            className="text-xs"
+                          >
                             {project.priority}
                           </Badge>
                         </div>
                       </div>
-                      <p className="text-muted-foreground mb-3">{project.description}</p>
+                      <p className="text-muted-foreground mb-3">
+                        {project.description}
+                      </p>
                       <div className="flex items-center gap-6 text-sm">
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4" />
@@ -378,7 +452,10 @@ export default function ProjectsPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <CheckSquare className="h-4 w-4" />
-                          <span>{project.tasks.completed}/{project.tasks.total} tasks</span>
+                          <span>
+                            {project.tasks.completed}/{project.tasks.total}{" "}
+                            tasks
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4" />
@@ -387,11 +464,15 @@ export default function ProjectsPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <div className="text-2xl font-bold">{project.progress}%</div>
-                      <div className="text-sm text-muted-foreground">Complete</div>
+                      <div className="text-2xl font-bold">
+                        {project.progress}%
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Complete
+                      </div>
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -456,7 +537,11 @@ export default function ProjectsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${getStatusColor(project.status)}`} />
+                        <div
+                          className={`w-2 h-2 rounded-full ${getStatusColor(
+                            project.status
+                          )}`}
+                        />
                         <Badge variant="outline" className="text-xs capitalize">
                           {project.status.replace("-", " ")}
                         </Badge>
@@ -464,16 +549,27 @@ export default function ProjectsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Progress value={project.progress} className="w-20 h-2" />
-                        <span className="text-sm font-medium">{project.progress}%</span>
+                        <Progress
+                          value={project.progress}
+                          className="w-20 h-2"
+                        />
+                        <span className="text-sm font-medium">
+                          {project.progress}%
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex -space-x-2">
                         {project.team.slice(0, 3).map((member, index) => (
-                          <Avatar key={index} className="h-6 w-6 border-2 border-background">
+                          <Avatar
+                            key={index}
+                            className="h-6 w-6 border-2 border-background"
+                          >
                             <AvatarFallback className="text-xs">
-                              {member.split(" ").map(n => n[0]).join("")}
+                              {member
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")}
                             </AvatarFallback>
                           </Avatar>
                         ))}
@@ -542,7 +638,10 @@ export default function ProjectsPage() {
               <div className="text-center">
                 <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>Calendar view coming soon</p>
-                <p className="text-sm">This will show project deadlines and milestones in a calendar format</p>
+                <p className="text-sm">
+                  This will show project deadlines and milestones in a calendar
+                  format
+                </p>
               </div>
             </div>
           </CardContent>
@@ -550,4 +649,4 @@ export default function ProjectsPage() {
       )}
     </div>
   );
-} 
+}
