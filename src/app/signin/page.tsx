@@ -110,7 +110,7 @@ export default function SignInPage() {
         </div>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="text-center">
             <CardTitle>Sign In</CardTitle>
             <CardDescription>
               Enter your credentials to access your account
@@ -243,18 +243,18 @@ export default function SignInPage() {
                 </AlertDialog>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full cursor-pointer" disabled={loading}>
                 {loading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
 
             {/* Social Login */}
-            <div className="space-y-4">
+            <div className="my-4 space-y-4">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <Separator className="w-full" />
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
+                <div className="relative flex justify-center text-xs">
                   <span className="bg-background px-2 text-muted-foreground">
                     Or continue with
                   </span>
@@ -265,7 +265,7 @@ export default function SignInPage() {
                 <Button
                   variant="outline"
                   onClick={() => handleSocialLogin("google")}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 cursor-pointer"
                 >
                   <FcGoogle className="w-4 h-4" />
                   <span className="hidden sm:inline">Google</span>

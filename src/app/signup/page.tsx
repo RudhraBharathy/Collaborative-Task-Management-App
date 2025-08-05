@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -44,6 +44,8 @@ import {
 } from "@/lib/profile";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { getGravatarUrl } from "@/lib/gravatar";
+import { toast } from "sonner";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -52,17 +54,34 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [resendTimer, setResendTimer] = useState(60);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (step === 2 && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+
+    return () => clearInterval(interval);
+  }, [step, resendTimer]);
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     confirmPassword: "",
     fullName: "",
     jobTitle: "",
-    teamName: "",
+    // teamName: "",
     defaultView: "board",
     notifications: true,
     timezone: "UTC",
+    gravatarUrl: "",
   });
+  const [uploading, setUploading] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -100,6 +119,7 @@ export default function SignUpPage() {
           "Account created successfully! Please check your email to verify your account."
         );
         setStep(2);
+        setResendTimer(60);
       }
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
@@ -122,6 +142,8 @@ export default function SignUpPage() {
         setError("Please verify your email first, then try again.");
       } else {
         setSuccess("Email verified and signed in successfully!");
+        const gravatarUrl = getGravatarUrl(formData.email);
+        setFormData((prev) => ({ ...prev, gravatarUrl }));
         setStep(3);
       }
     } catch (err) {
@@ -129,6 +151,20 @@ export default function SignUpPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResendEmail = async () => {
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: formData.email,
+      options: {
+        emailRedirectTo: `${location.origin}/signup`,
+      },
+    });
+    if (error) console.error("Resend email error:", error.message);
+    setStep(2);
+    setSuccess("Email resent successfully!");
+    setError(null);
   };
 
   const handleAccountSetup = async () => {
@@ -162,7 +198,7 @@ export default function SignUpPage() {
         email: user.email || formData.email,
         full_name: formData.fullName,
         job_title: formData.jobTitle,
-        team_name: formData.teamName,
+        // team_name: formData.teamName,
         default_view: formData.defaultView,
         timezone: formData.timezone,
         notifications_enabled: formData.notifications,
@@ -175,7 +211,7 @@ export default function SignUpPage() {
           email: user.email || formData.email,
           full_name: formData.fullName,
           job_title: formData.jobTitle,
-          team_name: formData.teamName,
+          // team_name: formData.teamName,
           default_view: formData.defaultView,
           timezone: formData.timezone,
           notifications_enabled: formData.notifications,
@@ -199,7 +235,55 @@ export default function SignUpPage() {
   };
 
   const handleSocialLogin = (provider: string) => {
-    console.log(`Signing up with ${provider}`);
+    const signInWithGoogle = async () => {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${location.origin}/signup`,
+        },
+      });
+      if (error) console.error("Google sign-in error:", error.message);
+    };
+    signInWithGoogle();
+    setStep(2);
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Date.now()}.${fileExt}`;
+
+    setUploading(true);
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(fileName, file, {
+        cacheControl: "3600",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      toast.error("Upload failed.");
+      console.error(uploadError);
+      setUploading(false);
+      return;
+    }
+
+    const { data: publicData } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(fileName);
+
+    setImageUrl(publicData?.publicUrl ?? "");
+    setFormData((prev) => ({ ...prev, gravatarUrl: "" }));
+    toast.success("Image uploaded!");
+    setUploading(false);
+  };
+
+  const handleRemoveImage = () => {
+    setImageUrl(null);
+    setFormData((prev) => ({ ...prev, gravatarUrl: "" }));
   };
 
   return (
@@ -332,43 +416,40 @@ export default function SignUpPage() {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Creating Account..." : "Create Account"}
                 </Button>
-
-                <div className="space-y-4">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <Separator className="w-full" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-background px-2 text-muted-foreground">
-                        Or continue with
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="grid">
-                    <Button
-                      variant="outline"
-                      onClick={() => handleSocialLogin("google")}
-                      className="flex items-center gap-2"
-                    >
-                      <FcGoogle className="w-4 h-4" />
-                      <span className="hidden sm:inline">Google</span>
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Already have an account?{" "}
-                    <Link
-                      href="/signin"
-                      className="text-primary hover:underline"
-                    >
-                      Sign in
-                    </Link>
-                  </p>
-                </div>
               </form>
+
+              <div className="my-4 space-y-4">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator className="w-full" />
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleSocialLogin("google")}
+                    className="flex items-center gap-2"
+                  >
+                    <FcGoogle className="w-4 h-4" />
+                    <span className="hidden sm:inline">Google</span>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">
+                  Already have an account?{" "}
+                  <Link href="/signin" className="text-primary hover:underline">
+                    Sign in
+                  </Link>
+                </p>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -383,20 +464,40 @@ export default function SignUpPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Alert>
-                <Mail className="h-4 w-4" />
-                <AlertDescription>
-                  Check your email and click the verification link to continue.
-                </AlertDescription>
-              </Alert>
+              {/* Error Message */}
+              {error && (
+                <Alert className="mb-4 border-red-200 bg-red-50">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800">
+                    {error}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Success Message */}
+              {success && (
+                <Alert className="mb-4 border-green-200 bg-green-50">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">
+                    {success}
+                  </AlertDescription>
+                </Alert>
+              )}
 
               <div className="text-center space-y-4">
                 <Button onClick={handleEmailVerification} className="w-full">
                   I've Verified My Email
                 </Button>
 
-                <Button variant="outline" className="w-full">
-                  Resend Email
+                <Button
+                  disabled={resendTimer > 0}
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleResendEmail}
+                >
+                  {resendTimer > 0
+                    ? `Resend in ${resendTimer}s`
+                    : "Resend Email"}
                 </Button>
               </div>
             </CardContent>
@@ -427,6 +528,7 @@ export default function SignUpPage() {
                     onChange={(e) =>
                       handleInputChange("fullName", e.target.value)
                     }
+                    required
                   />
                 </div>
 
@@ -444,25 +546,39 @@ export default function SignUpPage() {
 
                 <div className="space-y-2">
                   <Label>Profile Picture</Label>
-                  <div className="flex items-center gap-4">
+
+                  <div className="flex items-center gap-4 my-4">
                     <Avatar className="w-16 h-16">
-                      <AvatarImage src="/avatars/default.jpg" />
+                      <AvatarImage src={imageUrl || formData.gravatarUrl} />
                       <AvatarFallback>
-                        {formData.fullName
+                        {(formData.fullName || "U")
                           .split(" ")
                           .map((n) => n[0])
-                          .join("")}
+                          .join("")
+                          .toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <Button variant="outline" size="sm">
-                      Upload Photo
-                    </Button>
+
+                    <div className="space-y-4 max-w-sm mx-auto">
+                      <Label htmlFor="avatar">Upload Avatar</Label>
+                      <Input
+                        id="avatar"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleUpload}
+                        disabled={uploading}
+                      />
+
+                      {uploading && (
+                        <p className="text-sm text-blue-600">Uploading...</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Team Setup */}
-              <div className="space-y-4">
+              {/* <div className="space-y-4">
                 <h3 className="font-semibold flex items-center gap-2">
                   <Building className="w-4 h-4" />
                   Team Setup
@@ -512,7 +628,7 @@ export default function SignUpPage() {
                     }
                   />
                 </div>
-              </div>
+              </div> */}
 
               {/* Workspace Preferences */}
               <div className="space-y-4">
